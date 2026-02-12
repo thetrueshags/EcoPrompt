@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            width: 280px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #020617;
+            color: #e5e7eb;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .title-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 11px;
+            letter-spacing: 0.04em;
+        }
+
+        .logo-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 10px #22c55e;
+        }
+
+        .badge {
+            background: #1f2937;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            color: #9ca3af;
+            border: 1px solid #374151;
+        }
+
+        .card {
+            background: #0f172a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 8px;
+            display: flex;
+            gap: 12px;
+            border: 1px solid #1e293b;
+        }
+
+        .card.main {
+            background: rgba(6, 78, 59, 0.2);
+            border-color: #065f46;
+        }
+
+        .icon {
+            font-size: 20px;
+            width: 24px;
+            text-align: center;
+        }
+
+        .data {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .label {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-bottom: 2px;
+        }
+
+        .number {
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .highlight-green {
+            color: #4ade80;
+        }
+
+        .highlight-blue {
+            color: #60a5fa;
+        }
+
+        .highlight-yellow {
+            color: #facc15;
+        }
+
+        .unit {
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+
+        .token-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        button {
+            background: #111827;
+            color: #e5e7eb;
+            border: 1px solid #374151;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        button:hover {
+            background: #1f2937;
+        }
+
+        .disclaimer-box {
+            margin-top: 12px;
+            border-top: 1px solid #1e293b;
+            padding-top: 8px;
+        }
+
+        .disclaimer-toggle {
+            background: none;
+            border: none;
+            color: #4b5563;
+            padding: 0;
+            width: 100%;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #disclaimer-text {
+            display: none;
+            font-size: 9px;
+            color: #4b5563;
+            margin-top: 5px;
+            font-style: italic;
+            line-height: 1.3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div>
+            <div class="title-row"><span class="logo-dot"></span> EcoPrompt</div>
+            <div style="font-size: 9px; color: #9ca3af; margin-top: 2px;">Your AI footprint, made visible.</div>
+        </div>
+        <span class="badge">BETA</span>
+    </div>
+
+    <div class="card main">
+        <div class="icon">&#128161;</div>
+        <div class="data">
+            <span class="label">Lightbulb time so far</span>
+            <span class="number highlight-green" id="bulb-time">0 mins</span>
+            <span class="unit">Equivalent 9W LED bulb time</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="icon">&#128167;</div>
+        <div class="data">
+            <span class="label">Water footprint</span>
+            <span class="number highlight-blue" id="water-val">0</span>
+            <span class="unit" id="water-unit">ml evaporated (estimated)</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="icon">&#9889;</div>
+        <div class="data">
+            <span class="label">Energy used so far</span>
+            <span class="number highlight-yellow" id="energy-val">0</span>
+            <span class="unit" id="energy-unit">Wh used (estimated)</span>
+        </div>
+    </div>
+
+    <div class="token-row">
+        <span>Tracked <span id="token-count">0</span> tokens</span>
+        <button id="reset-btn">Reset</button>
+    </div>
+
+    <div class="disclaimer-box">
+        <button class="disclaimer-toggle" id="disclaimer-toggle">
+            Why this is an estimate <span id="chevron">&#9662;</span>
+        </button>
+        <div id="disclaimer-text">
+            Estimates based on 2025 inference efficiency. Real-world impact varies by data center PUE and local grid
+            carbon intensity.
+        </div>
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
