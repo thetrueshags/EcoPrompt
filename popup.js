@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
 
     chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === "local" && changes.totalTokens) {
+        if (area === "local" && (changes.totalTokens || changes.promptTokens || changes.responseTokens)) {
             updateUI();
         }
     });
@@ -43,10 +43,12 @@ function animateNumber(el, target, decimals = 0) {
 
 function updateUI() {
     chrome.storage.local.get(
-        ['totalTokens'],
+        ['totalTokens', 'promptTokens', 'responseTokens'],
         (res) => {
 
             const tokens = res.totalTokens || 0;
+            const prompt = res.promptTokens || 0;
+            const response = res.responseTokens || 0;
 
             // Energy Model
             const WH_PER_TOKEN = 0.0005;
@@ -100,6 +102,16 @@ function updateUI() {
             if (tokenEl) {
                 tokenEl.innerText =
                     Math.floor(tokens).toLocaleString();
+            }
+
+            const inputCountEl = document.getElementById('input-count');
+            if (inputCountEl) {
+                inputCountEl.innerText = Math.floor(prompt).toLocaleString();
+            }
+
+            const outputCountEl = document.getElementById('output-count');
+            if (outputCountEl) {
+                outputCountEl.innerText = Math.floor(response).toLocaleString();
             }
         }
     );
