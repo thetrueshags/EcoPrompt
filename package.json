@@ -1,0 +1,13 @@
+{
+  "name": "ecoprompt",
+  "version": "1.0.0",
+  "description": "Track the water and energy footprint of your AI chats.",
+  "scripts": {
+    "test": "jest",
+    "build": "powershell Compress-Archive -Path src/* -DestinationPath ecoprompt.zip -Force"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0",
+    "jest-environment-jsdom": "^29.0.0"
+  }
+}

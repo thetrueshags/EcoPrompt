@@ -1,0 +1,5 @@
+node_modules/
+ecoprompt.zip
+test_output.txt
+.DS_Store
+*.log

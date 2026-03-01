@@ -1,6 +1,6 @@
 const CONFIGS = {
   "gemini.google.com": {
-    user: ".user-query",
+    user: ".user-query, .query-text",
     ai: ".model-response-text",
   },
   "chatgpt.com": {
@@ -8,8 +8,8 @@ const CONFIGS = {
     ai: '[data-message-author-role="assistant"]',
   },
   "claude.ai": {
-    user: ".font-user-message",
-    ai: ".font-claude-message",
+    user: '.font-user-message, [data-testid="user-message"]',
+    ai: '.font-claude-message, .font-claude-response, [data-testid="assistant-message"], [data-testid="host-assistant-message"]',
   },
 };
 
@@ -30,7 +30,9 @@ let sessionInitialized = false;
 
 function countTokens(text) {
   if (!text) return 0;
-  const words = text.trim().split(/\s+/).length;
+  const trimmed = text.trim();
+  if (!trimmed) return 0;
+  const words = trimmed.split(/\s+/).length;
   return Math.ceil(words * 1.3);
 }
 
@@ -76,7 +78,7 @@ function monitorUserMessage(node) {
   if (userMessageStates.has(node)) return;
 
   const checkAndLog = () => {
-    const text = node.innerText;
+    const text = node.textContent;
     const tokens = countTokens(text);
 
     if (tokens > 0) {
@@ -131,7 +133,7 @@ function monitorAIResponse(node) {
   aiStreamStates.set(node, 0);
 
   const updateLogic = () => {
-    const text = node.innerText;
+    const text = node.textContent;
     const currentTokens = countTokens(text);
     const lastTokens = aiStreamStates.get(node) || 0;
     const delta = currentTokens - lastTokens;
@@ -243,4 +245,12 @@ if (document.readyState === "loading") {
 } else {
   // DOM is already loaded
   initialize();
+}
+
+// Export for tests
+if (typeof module !== "undefined" && module.exports) {
+  module.exports = {
+    countTokens,
+    CONFIGS,
+  };
 }

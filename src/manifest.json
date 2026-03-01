@@ -1,9 +1,11 @@
 {
   "manifest_version": 3,
   "name": "EcoPrompt: AI Climate Tracker",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Track the water and energy footprint of your AI chats.",
-  "permissions": ["storage"],
+  "permissions": [
+    "storage"
+  ],
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://gemini.google.com/*",
@@ -24,7 +26,9 @@
         "https://gemini.google.com/*",
         "https://claude.ai/*"
       ],
-      "js": ["content.js"]
+      "js": [
+        "content.js"
+      ]
     }
   ]
 }
