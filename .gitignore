@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+.bg-shell/
+ecoprompt.zip
+test_output.txt
+.DS_Store
+*.log
+.claude
