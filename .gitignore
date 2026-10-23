@@ -1,7 +1,9 @@
 node_modules/
 coverage/
 .bg-shell/
+src.zip
 ecoprompt.zip
+ecoprompt-media-kit.zip
 test_output.txt
 .DS_Store
 *.log

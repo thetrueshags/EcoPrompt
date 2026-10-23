@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>EcoPrompt media source</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main id="canvas"></main>
+    <script src="layouts.js"></script>
+    <script>
+      const item =
+        MEDIA.find(
+          (item) => item.id === new URLSearchParams(location.search).get("id"),
+        ) || MEDIA[0];
+      const mark =
+        '<svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><rect width="32" height="32" rx="11" fill="currentColor"/><path d="M23 9c-10-1-16 6-11 12 6 3 12-3 11-12Z" stroke="var(--paper)" stroke-width="1.5"/><path d="m10 24 9-11" stroke="var(--paper)" stroke-width="1.5" stroke-linecap="round"/></svg>';
+      const brand = `<div class="brand">${mark}<span>EcoPrompt</span></div>`;
+      const canvas = document.getElementById("canvas");
+      canvas.style.width = `${item.width}px`;
+      canvas.style.height = `${item.height}px`;
+      canvas.className = [item.kind, item.format, item.theme]
+        .filter(Boolean)
+        .join(" ");
+      const art = '<img class="art" src="../brand/chat-leaf.png" alt="">';
+      const footer =
+        '<div class="disclosure">Environmental figures are illustrative estimates.</div>';
+      const platforms =
+        '<div class="platforms">For ChatGPT <i>·</i> Gemini <i>·</i> Claude</div>';
+      if (item.kind === "store") {
+        canvas.innerHTML = `${brand}<div class="copy-block"><div class="eyebrow">${item.eyebrow}</div><h1>${item.title}</h1><p class="copy">${item.copy}</p><p class="note">${item.note}</p>${platforms}</div><div class="product-stage"><div class="stage-leaf"></div><div class="ui-frame ${item.focused ? "focused" : ""}"><img src="${item.image}" alt="${item.alt}"></div><div class="ui-label">${item.label}</div></div>${footer}<span class="page-count">0${MEDIA.indexOf(item) + 1} / 03</span>`;
+      } else if (item.kind === "small") {
+        canvas.innerHTML = `${art}${brand}<div class="small-caption">Mindful AI use.</div>`;
+      } else if (item.kind === "marquee") {
+        canvas.innerHTML = `${art}${brand}<div class="copy-block"><div class="eyebrow">${item.eyebrow}</div><h1>${item.title}</h1><p class="copy">${item.copy}</p></div>`;
+      } else {
+        canvas.innerHTML = `${art}${brand}<div class="copy-block"><div class="eyebrow">${item.eyebrow}</div><h1>${item.title}</h1><p class="copy">${item.copy}</p></div><div class="ad-bottom"><div class="cta">Meet EcoPrompt <span>↗</span></div>${platforms}</div>${footer}`;
+      }
+    </script>
+  </body>
+</html>

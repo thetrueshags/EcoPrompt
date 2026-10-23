@@ -1,117 +1,112 @@
 /** @jest-environment jsdom */
+const { createTracker, countTokens } = require("../src/content");
+const { createStore } = require("../src/background");
 
-// Exercise the content script through real DOM mutations, including streaming.
-const NativeMutationObserver = window.MutationObserver;
-let observers;
-let storage;
-let tracker;
-
-beforeEach(() => {
+let tracker, data, win;
+beforeEach(async () => {
   jest.useFakeTimers();
-  delete window.location;
-  window.location = { hostname: "chatgpt.com", href: "https://chatgpt.com/c/test" };
-  Object.defineProperty(document, "readyState", { configurable: true, value: "complete" });
-  document.body.innerHTML = "";
-  storage = {};
-  global.chrome = {
-    storage: { local: {
-      get: jest.fn((_, callback) => callback({ ...storage })),
-      set: jest.fn((updates) => Object.assign(storage, updates)),
-    } },
+  document.body.innerHTML = '<main></main><form><div contenteditable="true" role="textbox"></div><button type="button" data-testid="send-button"><span>Send</span></button></form>';
+  data = {};
+  const store = createStore({
+    get: async () => JSON.parse(JSON.stringify(data)),
+    set: async (values) => { data = JSON.parse(JSON.stringify(values)); },
+  });
+  win = {
+    location: { hostname: "chatgpt.com", href: "https://chatgpt.com/" },
+    crypto: { randomUUID: () => "chatgpt-layout-test" },
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
   };
-  observers = [];
-  global.MutationObserver = class extends NativeMutationObserver {
-    constructor(callback) {
-      super(callback);
-      observers.push(this);
-    }
-  };
-  jest.isolateModules(() => { tracker = require("../src/content.js"); });
-  jest.advanceTimersByTime(2000);
+  tracker = createTracker({
+    doc: document, win,
+    runtime: { sendMessage: async (batch) => ({ ok: true, state: await store.dispatch(batch) }) },
+    storage: { onChanged: { addListener: jest.fn(), removeListener: jest.fn() } },
+  });
+  await tracker.start();
 });
-
 afterEach(() => {
-  observers.forEach((observer) => observer.disconnect());
+  tracker.stop();
   jest.clearAllTimers();
   jest.useRealTimers();
 });
-
-async function flush() {
+async function settle() {
   await Promise.resolve();
-  await Promise.resolve();
-  jest.advanceTimersByTime(1);
+  jest.advanceTimersByTime(100);
+  await tracker.flush();
 }
-
-describe("ChatGPT layout compatibility", () => {
-  it.each(["data-message-author-role", "data-content-search-unit-key", "data-chatgpt-search-unit-key"])(
-    "tracks prompts and streaming replies with %s",
-    async (attribute) => {
-      const roleValue = (role) => attribute === "data-message-author-role" ? role : `turn:0:${role}`;
-      document.body.innerHTML = `<div ${attribute}="${roleValue("user")}">Explain solar power</div>
-        <div ${attribute}="${roleValue("assistant")}"><p>Solar</p></div>`;
-      await flush();
-      document.querySelector("p").firstChild.data = "Solar panels convert sunlight into electricity";
-      await flush();
-
-      expect(storage.promptTokens).toBe(tracker.countTokens("Explain solar power"));
-      expect(storage.responseTokens).toBe(tracker.countTokens("Solar panels convert sunlight into electricity"));
-      expect(storage.platforms["chatgpt.com"].total).toBe(storage.totalTokens);
-      expect(storage.dailyHistory[tracker.getTodayKey()].total).toBe(storage.totalTokens);
-    },
+function send(method = "click") {
+  if (method === "click") document.querySelector("button span").click();
+  else document.querySelector('[role="textbox"]').dispatchEvent(
+    new KeyboardEvent("keydown", { key: "Enter", bubbles: true }),
   );
-
-  it("counts overlapping legacy and new markers once per message", async () => {
-    document.body.innerHTML = `
-      <div data-turn-key="turn-1">
-        <div data-content-search-unit-key="turn-1:0:user">
-          <div data-chatgpt-search-unit-key="turn-1:0:user">
-            <div data-message-author-role="user"><div data-user-message-bubble="true">Explain solar power</div></div>
-          </div>
-        </div>
-        <div data-content-search-unit-key="turn-1:0:assistant">
-          <div data-chatgpt-search-unit-key="turn-1:0:assistant">
-            <div data-message-author-role="assistant">Solar panels convert sunlight</div>
-          </div>
-        </div>
-      </div>`;
-    await flush();
-    expect(storage.promptTokens).toBe(tracker.countTokens("Explain solar power"));
-    expect(storage.responseTokens).toBe(tracker.countTokens("Solar panels convert sunlight"));
-  });
-
-  it("recognizes a user bubble without legacy role attributes", async () => {
-    document.body.innerHTML = '<div data-turn-key="turn-1"><div data-user-message-bubble="true">Hello world</div></div>';
-    await flush();
-    expect(storage.promptTokens).toBe(tracker.countTokens("Hello world"));
-  });
-
-  it("detects role markers assigned after an element is mounted", async () => {
-    const user = document.createElement("div");
-    user.textContent = "Hello world";
-    document.body.appendChild(user);
-    await flush();
-    user.setAttribute("data-content-search-unit-key", "turn-1:0:user");
-    await flush();
-    expect(storage.promptTokens).toBe(tracker.countTokens("Hello world"));
-  });
-
-  it("does not count existing history or its later streaming mutations", async () => {
-    document.body.innerHTML = '<div data-content-search-unit-key="old:0:user">Old question</div><div data-content-search-unit-key="old:0:assistant"><p>Old reply</p></div>';
-    tracker.markPreExistingMessages();
-    await flush();
-    document.querySelector("p").firstChild.data = "Old reply loaded later";
-    await flush();
-    expect(chrome.storage.local.set).not.toHaveBeenCalled();
-  });
-
-  it("ignores history mounted during navigation, then counts a new exchange", async () => {
-    tracker.onNavigate();
-    document.body.innerHTML = '<div data-content-search-unit-key="old:0:user">Old question</div><div data-content-search-unit-key="old:0:assistant">Old reply</div>';
-    await flush();
-    jest.advanceTimersByTime(500);
-    document.body.insertAdjacentHTML("beforeend", '<div data-content-search-unit-key="new:0:user">New question</div><div data-content-search-unit-key="new:0:assistant">New reply</div>');
-    await flush();
-    expect(storage.promptTokens).toBe(tracker.countTokens("New question"));
-    expect(storage.responseTokens).toBe(tracker.countTokens("New reply"));
-  });
+}
+const attributes = ["data-message-author-role", "data-content-search-unit-key", "data-chatgpt-search-unit-key"];
+function exchange(attribute, id = "turn-1") {
+  const value = (role) => attribute === "data-message-author-role" ? role : `${id}:0:${role}`;
+  return `<section data-turn-key="${id}"><div ${attribute}="${value("user")}">Explain solar power</div><div ${attribute}="${value("assistant")}"><p>Solar</p></div></section>`;
+}
+test.each(attributes.flatMap((attribute) => ["click", "Enter"].map((method) => [attribute, method])))(
+  "records %s with %s and streaming after the first conversation URL",
+  async (attribute, method) => {
+    send(method);
+    document.querySelector("main").innerHTML = exchange(attribute);
+    await settle();
+    expect(data.promptTokens).toBe(countTokens("Explain solar power"));
+    expect(data.responseTokens).toBe(countTokens("Solar"));
+    win.location.href = "https://chatgpt.com/c/new-chat";
+    document.querySelector("p").firstChild.data = "Solar panels convert sunlight into electricity";
+    await settle();
+    expect(data.responseTokens).toBe(countTokens("Solar panels convert sunlight into electricity"));
+    expect(data.platforms["chatgpt.com"].total).toBe(data.totalTokens);
+  },
+);
+test("overlapping markers count each role once within a shared turn", async () => {
+  send();
+  document.querySelector("main").innerHTML = `<section data-turn-key="turn-1">
+    <div data-content-search-unit-key="turn-1:0:user"><div data-chatgpt-search-unit-key="turn-1:0:user"><div data-message-author-role="user"><div data-user-message-bubble>Hello world</div></div></div></div>
+    <div data-content-search-unit-key="turn-1:0:assistant"><div data-chatgpt-search-unit-key="turn-1:0:assistant"><div data-message-author-role="assistant">A useful answer</div></div></div>
+  </section>`;
+  await settle();
+  expect(data.promptTokens).toBe(countTokens("Hello world"));
+  expect(data.responseTokens).toBe(countTokens("A useful answer"));
+});
+test("recognizes standalone user bubbles", async () => {
+  send();
+  document.querySelector("main").innerHTML = '<div data-user-message-bubble>Hello world</div>';
+  await settle();
+  expect(data.promptTokens).toBe(countTokens("Hello world"));
+});
+test.each(attributes)("observes %s assigned after text mounts", async (attribute) => {
+  send();
+  const node = document.createElement("div");
+  node.textContent = "Hello world";
+  document.querySelector("main").append(node);
+  await settle();
+  expect(data.totalTokens).toBeUndefined();
+  node.setAttribute(attribute, attribute === "data-message-author-role" ? "user" : "turn-1:0:user");
+  await settle();
+  expect(data.promptTokens).toBe(countTokens("Hello world"));
+});
+test.each(attributes.slice(1))("stable %s avoids counting remounted messages and scrolled history", async (attribute) => {
+  const main = document.querySelector("main");
+  main.innerHTML = exchange(attribute, "old");
+  await settle();
+  expect(data.totalTokens).toBeUndefined();
+  send();
+  main.insertAdjacentHTML("beforeend", exchange(attribute));
+  await settle();
+  const total = data.totalTokens;
+  main.innerHTML = exchange(attribute, "older") + main.innerHTML;
+  await settle();
+  expect(data.totalTokens).toBe(total);
+  win.location.href = "https://chatgpt.com/c/history";
+  tracker.navigation(); // first conversation assignment
+  win.location.href = "https://chatgpt.com/c/another-history";
+  main.innerHTML = exchange(attribute, "historical");
+  await settle();
+  expect(data.totalTokens).toBe(total);
+  send("Enter");
+  main.insertAdjacentHTML("beforeend", exchange(attribute, "fresh"));
+  await settle();
+  expect(data.totalTokens).toBe(total * 2);
 });

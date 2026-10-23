@@ -1,13 +1,17 @@
 {
   "name": "ecoprompt",
-  "version": "2.0.0",
-  "description": "Track the water and energy footprint of your AI chats.",
+  "version": "2.0.1",
+  "description": "A private, minimal browser tracker for mindful AI use and illustrative environmental estimates.",
   "scripts": {
     "test": "jest",
-    "build": "powershell Compress-Archive -Path src/* -DestinationPath ecoprompt.zip -Force"
+    "test:browser": "node scripts/browser-check.js",
+    "media:build": "node scripts/render-media.js",
+    "icons:build": "node scripts/render-icons.js",
+    "build": "node scripts/build.js"
   },
   "devDependencies": {
     "jest": "^29.0.0",
-    "jest-environment-jsdom": "^29.0.0"
+    "jest-environment-jsdom": "^29.0.0",
+    "playwright": "^1.64.1"
   }
 }

@@ -1,20 +1,32 @@
 {
   "manifest_version": 3,
-  "name": "EcoPrompt: AI Climate Tracker",
-  "version": "2.0",
-  "description": "Track the water and energy footprint of your AI chats.",
+  "name": "EcoPrompt: AI Usage & Footprint Tracker",
+  "short_name": "EcoPrompt",
+  "version": "2.0.1",
+  "description": "Track ChatGPT, Gemini, and Claude usage with illustrative energy and water estimates. Private, local tracking for mindful AI use.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "permissions": [
     "storage"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "host_permissions": [
     "https://chatgpt.com/*",
     "https://gemini.google.com/*",
     "https://claude.ai/*"
   ],
   "action": {
+    "default_title": "EcoPrompt: Your AI footprint, at a glance",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }

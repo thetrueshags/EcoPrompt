@@ -1,0 +1,87 @@
+{
+  "brand": "EcoPrompt",
+  "generatedWith": "Built-in image_gen for original illustration; native HTML/CSS and Chromium for exact typography, real screenshots, and final export.",
+  "assets": [
+    {
+      "file": "store/01-overview-1280x800.png",
+      "width": 1280,
+      "height": 800,
+      "alt": "EcoPrompt overview with illustrative energy and water estimates and an LED comparison.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": true
+    },
+    {
+      "file": "store/02-details-1280x800.png",
+      "width": 1280,
+      "height": 800,
+      "alt": "Expanded real EcoPrompt activity view with its seven-day chart, platform share, and approximate token counts.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": true
+    },
+    {
+      "file": "store/03-privacy-1280x800.png",
+      "width": 1280,
+      "height": 800,
+      "alt": "The real EcoPrompt privacy details and local export and clear-data controls.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": true
+    },
+    {
+      "file": "store/promo-small-440x280.png",
+      "width": 440,
+      "height": 280,
+      "alt": "EcoPrompt wordmark and sculpted forest-green chat bubble folding into a leaf.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    },
+    {
+      "file": "store/promo-marquee-1400x560.png",
+      "width": 1400,
+      "height": 560,
+      "alt": "Wide EcoPrompt promotion with its leaf-and-chat sculpture and awareness message.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    },
+    {
+      "file": "ads/awareness-square-1080x1080.png",
+      "width": 1080,
+      "height": 1080,
+      "alt": "Square EcoPrompt ad with a chat-and-leaf sculpture and the headline Small prompts. More perspective.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    },
+    {
+      "file": "ads/awareness-portrait-1080x1350.png",
+      "width": 1080,
+      "height": 1350,
+      "alt": "Portrait EcoPrompt ad promoting a mindful AI habit with a sculpted chat-and-leaf illustration.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    },
+    {
+      "file": "ads/awareness-story-1080x1920.png",
+      "width": 1080,
+      "height": 1920,
+      "alt": "Story-format EcoPrompt ad with ample safe margins and the headline Every prompt. A chance to be mindful.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    },
+    {
+      "file": "ads/awareness-landscape-1200x628.png",
+      "width": 1200,
+      "height": 628,
+      "alt": "Landscape EcoPrompt ad pairing its awareness message with a tactile leaf-and-chat sculpture.",
+      "type": "image/png",
+      "color": "RGB, no alpha",
+      "illustrativeData": false
+    }
+  ]
+}

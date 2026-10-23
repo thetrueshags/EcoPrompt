@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <title>EcoPrompt</title>
+  <rect x="16" y="16" width="96" height="96" rx="33" fill="#345a3c"/>
+  <g transform="translate(16 16) scale(3)" stroke="#f7f8f2" stroke-width="1.5">
+    <path d="M23 9c-10-1-16 6-11 12 6 3 12-3 11-12Z"/>
+    <path d="m10 24 9-11" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -1,0 +1,417 @@
+:root {
+  --paper: #f7f8f2;
+  --ink: #243b30;
+  --muted: #617064;
+  --forest: #345a3c;
+  --sage: #bed29a;
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  color: var(--ink);
+}
+#canvas {
+  position: relative;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+.brand {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--forest);
+  font-size: 30px;
+  font-weight: 650;
+  letter-spacing: -1.2px;
+  z-index: 5;
+}
+.brand svg {
+  width: 46px;
+  height: 46px;
+}
+h1,
+p {
+  margin: 0;
+}
+h1 {
+  font-size: 64px;
+  font-weight: 500;
+  letter-spacing: -2.7px;
+  line-height: 1.08;
+}
+.eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+.copy {
+  font-size: 23px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-top: 26px;
+}
+.copy-block {
+  position: absolute;
+  z-index: 3;
+}
+.note {
+  margin-top: 38px;
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 400px;
+  line-height: 1.55;
+}
+.platforms {
+  font-size: 15px;
+  color: var(--muted);
+}
+.platforms i {
+  font-style: normal;
+  margin: 0 8px;
+  color: #9bab92;
+}
+.disclosure {
+  position: absolute;
+  bottom: 35px;
+  left: 64px;
+  font-size: 13px;
+  color: var(--muted);
+  z-index: 4;
+}
+.store .brand {
+  top: 55px;
+  left: 64px;
+}
+.store .copy-block {
+  left: 64px;
+  top: 214px;
+  width: 600px;
+}
+.store h1 {
+  font-size: 64px;
+}
+.store .copy {
+  max-width: 470px;
+}
+.store .platforms {
+  margin-top: 32px;
+}
+.product-stage {
+  position: absolute;
+  left: 704px;
+  top: 0;
+  width: 576px;
+  height: 800px;
+  background: #e9eedf;
+  border-left: 1px solid #dce3d7;
+}
+.stage-leaf {
+  position: absolute;
+  width: 590px;
+  height: 590px;
+  border: 1px solid #d4ddc7;
+  border-radius: 100% 0 100% 0;
+  transform: rotate(-17deg);
+  top: 80px;
+  left: 8px;
+}
+.ui-frame {
+  position: absolute;
+  top: 75px;
+  left: 100px;
+  width: 374px;
+  height: 599px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 24px 56px #243b301b;
+  border: 1px solid #d3dccd;
+  background: var(--paper);
+}
+.ui-frame img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.ui-frame.focused {
+  top: 50%;
+  transform: translateY(-50%);
+  left: 83px;
+  width: 410px;
+  height: auto;
+  padding: 22px;
+}
+.ui-label {
+  position: absolute;
+  bottom: 83px;
+  left: 64px;
+  width: 448px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+.page-count {
+  position: absolute;
+  bottom: 35px;
+  right: 38px;
+  z-index: 4;
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+.dark {
+  --paper: #17231d;
+  --ink: #e1e9dc;
+  --muted: #abb9a8;
+  --forest: #b6d498;
+}
+.dark .product-stage {
+  background: #233728;
+  border-color: #354638;
+}
+.dark .stage-leaf {
+  border-color: #354d35;
+}
+.dark .ui-frame {
+  border-color: #3d533b;
+}
+.art {
+  position: absolute;
+  display: block;
+  z-index: 0;
+}
+.small .art {
+  width: 440px;
+  height: 293.33px;
+  top: 0;
+  left: 0;
+}
+.small .brand {
+  left: 26px;
+  top: 25px;
+  font-size: 25px;
+  gap: 8px;
+  letter-spacing: -0.8px;
+}
+.small .brand svg {
+  width: 33px;
+  height: 33px;
+}
+.small-caption {
+  position: absolute;
+  left: 28px;
+  bottom: 29px;
+  font-size: 15px;
+  font-weight: 500;
+}
+.marquee .art {
+  right: -10px;
+  top: 0;
+  width: 840px;
+  height: 560px;
+  mask-image: linear-gradient(to right, transparent 0%, #000 24%);
+}
+.marquee .brand {
+  left: 64px;
+  top: 48px;
+}
+.marquee .copy-block {
+  left: 64px;
+  top: 190px;
+  width: 700px;
+}
+.marquee h1 {
+  font-size: 60px;
+}
+.marquee .copy {
+  font-size: 23px;
+  margin-top: 24px;
+}
+.marquee .eyebrow {
+  margin-bottom: 20px;
+}
+.ad .brand {
+  left: 64px;
+  top: 58px;
+  font-size: 37px;
+  gap: 14px;
+}
+.ad .brand svg {
+  width: 52px;
+  height: 52px;
+}
+.ad .copy-block {
+  left: 64px;
+  top: 202px;
+}
+.ad h1 {
+  font-size: 80px;
+  letter-spacing: -3.8px;
+}
+.ad .eyebrow {
+  font-size: 15px;
+  letter-spacing: 2.3px;
+}
+.ad .copy {
+  font-size: 26px;
+  line-height: 1.5;
+  margin-top: 24px;
+}
+.ad .art {
+  left: 0;
+  bottom: 0;
+  width: 1080px;
+  height: 720px;
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 10%);
+}
+.ad-bottom {
+  position: absolute;
+  z-index: 4;
+  left: 64px;
+  bottom: 118px;
+}
+.cta {
+  display: inline-flex;
+  gap: 34px;
+  align-items: center;
+  padding: 19px 28px;
+  border-radius: 13px;
+  background: var(--forest);
+  color: var(--paper);
+  font-size: 24px;
+  font-weight: 500;
+}
+.cta span {
+  font-size: 27px;
+  line-height: 1;
+}
+.ad .platforms {
+  font-size: 19px;
+  margin-top: 22px;
+}
+.ad .disclosure {
+  font-size: 16px;
+  bottom: 43px;
+}
+.square .copy {
+  max-width: 470px;
+}
+.square .ad-bottom {
+  bottom: 120px;
+}
+.portrait .copy-block {
+  top: 215px;
+}
+.portrait .art {
+  bottom: 90px;
+  width: 1290px;
+  height: 860px;
+  left: -215px;
+}
+.portrait .ad-bottom {
+  bottom: 112px;
+}
+.story .brand {
+  top: 190px;
+  left: 80px;
+}
+.story .copy-block {
+  top: 355px;
+  left: 80px;
+}
+.story h1 {
+  font-size: 103px;
+  line-height: 1.03;
+}
+.story .copy {
+  margin-top: 36px;
+  font-size: 29px;
+}
+.story .art {
+  width: 1290px;
+  height: 860px;
+  left: -210px;
+  bottom: 340px;
+}
+.story .ad-bottom {
+  left: 80px;
+  bottom: 250px;
+}
+.story .disclosure {
+  left: 80px;
+  bottom: 190px;
+  font-size: 18px;
+}
+.story .platforms {
+  font-size: 22px;
+}
+.story .cta {
+  font-size: 29px;
+  padding: 22px 32px;
+}
+.landscape .brand {
+  top: 40px;
+  left: 54px;
+  font-size: 28px;
+  gap: 10px;
+}
+.landscape .brand svg {
+  width: 40px;
+  height: 40px;
+}
+.landscape .copy-block {
+  left: 54px;
+  top: 151px;
+}
+.landscape .eyebrow {
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+.landscape h1 {
+  font-size: 67px;
+  letter-spacing: -2.7px;
+}
+.landscape .copy {
+  font-size: 20px;
+  margin-top: 20px;
+}
+.landscape .art {
+  width: 870px;
+  height: 580px;
+  left: auto;
+  right: -10px;
+  bottom: 0;
+  mask-image: linear-gradient(to right, transparent 0%, #000 27%);
+}
+.landscape .ad-bottom {
+  left: 54px;
+  bottom: 88px;
+}
+.landscape .cta {
+  font-size: 18px;
+  padding: 14px 20px;
+  border-radius: 10px;
+  gap: 24px;
+}
+.landscape .cta span {
+  font-size: 20px;
+}
+.landscape .platforms {
+  font-size: 14px;
+  margin-top: 14px;
+}
+.landscape .disclosure {
+  left: 54px;
+  bottom: 27px;
+  font-size: 12px;
+}

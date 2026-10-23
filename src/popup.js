@@ -1,267 +1,320 @@
-// ── Constants ────────────────────────────────────────────────────────────────
-
-const WH_PER_TOKEN = 0.0005;
-const ML_PER_TOKEN = 0.002;
-const BULB_WATTS = 9;
-const GCO2_PER_KWH = 450;   // global average grid intensity
-const GCO2_PER_TOKEN = WH_PER_TOKEN / 1000 * GCO2_PER_KWH; // 0.000225
-
-const PLATFORM_COLORS = {
-    "claude.ai": "#d97706",
-    "chatgpt.com": "#10b981",
-    "gemini.google.com": "#3b82f6",
-};
-
-const PLATFORM_LABELS = {
-    "claude.ai": "Claude",
-    "chatgpt.com": "ChatGPT",
-    "gemini.google.com": "Gemini",
-};
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-
-document.addEventListener('DOMContentLoaded', () => {
-    updateUI();
-
-    chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === "local") {
-            updateUI();
-        }
-    });
-
-    document.getElementById('reset-btn').addEventListener('click', () => {
-        chrome.storage.local.set({
-            totalTokens: 0,
-            promptTokens: 0,
-            responseTokens: 0,
-            platforms: {},
-        }, updateUI);
-    });
-
-    document.getElementById('export-btn').addEventListener('click', () => {
-        chrome.storage.local.get(null, (data) => {
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = "ecoprompt-export-" + new Date().toISOString().slice(0, 10) + ".json";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+﻿(function () {
+  const S =
+    typeof module !== "undefined"
+      ? require("./shared.js")
+      : globalThis.EcoPrompt;
+  const PERIODS = { today: "Today", week: "Last 7 days", all: "All time" };
+  function selectUsage(state, period, now = new Date()) {
+    if (period === "all")
+      return {
+        prompt: state.promptTokens,
+        response: state.responseTokens,
+        total: state.totalTokens,
+        platforms: state.platforms,
+      };
+    const days = period === "today" ? [S.dateKey(now)] : S.recentDays(7, now);
+    const selected = { prompt: 0, response: 0, total: 0, platforms: {} };
+    for (const key of days) {
+      const day = state.dailyHistory[key];
+      if (!day) continue;
+      for (const metric of ["prompt", "response", "total"])
+        selected[metric] += day[metric];
+      for (const [host, value] of Object.entries(day.platforms || {})) {
+        const entry = (selected.platforms[host] ||= {
+          prompt: 0,
+          response: 0,
+          total: 0,
         });
-    });
-
-    document.getElementById('disclaimer-toggle').addEventListener('click', () => {
-        const text = document.getElementById('disclaimer-text');
-        const chevron = document.getElementById('chevron');
-        const isOpen = text.style.display === 'block';
-        text.style.display = isOpen ? 'none' : 'block';
-        chevron.innerHTML = isOpen ? '&#9662;' : '&#9652;';
-    });
-});
-
-// ── Animation ────────────────────────────────────────────────────────────────
-
-function animateNumber(el, target, decimals) {
-    if (decimals === undefined) decimals = 0;
-    if (!el) return;
-
-    var startStr = el.innerText;
-    var start = parseFloat((startStr || "0").replace(/,/g, "")) || 0;
-    var duration = 600;
-    var startTime = performance.now();
-
-    function step(now) {
-        var progress = Math.min((now - startTime) / duration, 1);
-        var current = start + (target - start) * progress;
-        el.innerText = current.toFixed(decimals);
-        if (progress < 1) requestAnimationFrame(step);
+        for (const metric of ["prompt", "response", "total"])
+          entry[metric] += value[metric];
+      }
     }
-
-    requestAnimationFrame(step);
-}
-
-// ── UI Update ────────────────────────────────────────────────────────────────
-
-function updateUI() {
-    chrome.storage.local.get(
-        ['totalTokens', 'promptTokens', 'responseTokens', 'platforms', 'dailyHistory'],
-        function (res) {
-            var tokens = res.totalTokens || 0;
-            var prompt = res.promptTokens || 0;
-            var response = res.responseTokens || 0;
-            var platforms = res.platforms || {};
-            var dailyHistory = res.dailyHistory || {};
-
-            var energyWh = tokens * WH_PER_TOKEN;
-            var waterMl = tokens * ML_PER_TOKEN;
-            var bulbMins = (energyWh / BULB_WATTS) * 60;
-            var co2Grams = tokens * GCO2_PER_TOKEN;
-
-            // ── Bulb time ──
-            var bulbEl = document.getElementById('bulb-time');
-            if (bulbEl) {
-                var timeStr = "0 mins";
-                if (tokens > 0) {
-                    if (bulbMins < 1)
-                        timeStr = Math.round(bulbMins * 60) + " seconds";
-                    else if (bulbMins > 60)
-                        timeStr = (bulbMins / 60).toFixed(1) + " hours";
-                    else
-                        timeStr = Math.round(bulbMins) + " mins";
-                }
-                bulbEl.innerText = timeStr;
-            }
-
-            // ── Energy ──
-            animateNumber(document.getElementById('energy-val'), energyWh, 3);
-
-            // ── Water ──
-            var waterEl = document.getElementById('water-val');
-            if (waterEl) {
-                if (waterMl >= 1000) {
-                    animateNumber(waterEl, waterMl / 1000, 2);
-                    document.getElementById('water-unit').innerText = "Liters evaporated (estimated)";
-                } else {
-                    animateNumber(waterEl, waterMl, 1);
-                    document.getElementById('water-unit').innerText = "ml evaporated (estimated)";
-                }
-            }
-
-            // ── CO₂ ──
-            var co2El = document.getElementById('co2-val');
-            if (co2El) {
-                if (co2Grams >= 1000) {
-                    animateNumber(co2El, co2Grams / 1000, 2);
-                    document.getElementById('co2-unit').innerText = "kg CO₂ (estimated)";
-                } else {
-                    animateNumber(co2El, co2Grams, 1);
-                    document.getElementById('co2-unit').innerText = "g CO₂ (estimated)";
-                }
-            }
-
-            // ── Token counts ──
-            var tokenEl = document.getElementById('token-count');
-            if (tokenEl) tokenEl.innerText = Math.floor(tokens).toLocaleString();
-
-            var inputCountEl = document.getElementById('input-count');
-            if (inputCountEl) inputCountEl.innerText = Math.floor(prompt).toLocaleString();
-
-            var outputCountEl = document.getElementById('output-count');
-            if (outputCountEl) outputCountEl.innerText = Math.floor(response).toLocaleString();
-
-            // ── Per-platform breakdown ──
-            renderPlatforms(platforms);
-
-            // ── 7-day chart ──
-            renderDailyChart(dailyHistory);
-        }
+    return selected;
+  }
+  function quantity(value, base, large) {
+    const scaled = value >= 1000;
+    const number = scaled ? value / 1000 : value;
+    const text =
+      number === 0
+        ? "0"
+        : number < 0.01
+          ? "<0.01"
+          : new Intl.NumberFormat(undefined, {
+              maximumSignificantDigits: 2,
+            }).format(number);
+    return { value: text, unit: scaled ? large : base };
+  }
+  function duration(seconds) {
+    if (seconds < 1) return "less than a second";
+    if (seconds < 60) return `about ${Math.round(seconds)} seconds`;
+    if (seconds < 3600) return `about ${Math.round(seconds / 60)} minutes`;
+    return `about ${new Intl.NumberFormat(undefined, { maximumSignificantDigits: 2 }).format(seconds / 3600)} hours`;
+  }
+  function exportData(state, now = new Date()) {
+    const { recentBatches, epoch, ...usage } = state;
+    const cutoff = S.recentDays(30, now)[0];
+    usage.dailyHistory = Object.fromEntries(
+      Object.entries(usage.dailyHistory).filter(([key]) => key >= cutoff),
     );
-}
-
-// ── Platform Breakdown ───────────────────────────────────────────────────────
-
-function renderPlatforms(platforms) {
-    var container = document.getElementById('platform-bars');
-    var section = document.getElementById('platform-section');
-    if (!container || !section) return;
-
-    var entries = Object.entries(platforms).filter(function (e) { return e[1].total > 0; });
-    if (entries.length === 0) {
-        section.style.display = 'none';
-        return;
+    return {
+      exportedAt: now.toISOString(),
+      model: S.MODEL,
+      notice:
+        "Illustrative estimates, not measured consumption. Token counts approximate visible text only.",
+      usage,
+    };
+  }
+  function init(doc = document, api = chrome) {
+    let state = S.normalize(),
+      period = "today",
+      revision = 0;
+    const byId = (id) => doc.getElementById(id);
+    const text = (id, value) => {
+      byId(id).textContent = value;
+    };
+    const feedback = (value) => text("feedback", value);
+    const integer = (n) => n.toLocaleString();
+    async function request(message) {
+      const reply = await api.runtime.sendMessage(message);
+      if (!reply?.ok)
+        throw new Error(
+          reply?.error ||
+            "Could not connect. Reload the extension and refresh your AI tabs.",
+        );
+      return S.normalize(reply.state);
     }
-
-    section.style.display = '';
-    var maxTotal = Math.max.apply(null, entries.map(function (e) { return e[1].total; }));
-    container.innerHTML = '';
-
-    entries
-        .sort(function (a, b) { return b[1].total - a[1].total; })
-        .forEach(function (entry) {
-            var key = entry[0], val = entry[1];
-            var pct = maxTotal > 0 ? (val.total / maxTotal) * 100 : 0;
-            var color = PLATFORM_COLORS[key] || '#6b7280';
-            var label = PLATFORM_LABELS[key] || key;
-
-            var row = document.createElement('div');
-            row.className = 'platform-row';
-            row.innerHTML =
-                '<span class="platform-dot" style="background:' + color + '"></span>' +
-                '<span class="platform-name">' + label + '</span>' +
-                '<div class="platform-bar-track"><div class="platform-bar" style="width:' + pct + '%;background:' + color + '"></div></div>' +
-                '<span class="platform-count">' + formatCompact(val.total) + '</span>';
-            container.appendChild(row);
+    function metric(value, id, unitId, base, large) {
+      const formatted = quantity(value, base, large);
+      text(id, formatted.value);
+      text(unitId, formatted.unit);
+    }
+    function renderPlatforms(selected) {
+      const container = byId("platform-bars");
+      container.replaceChildren();
+      const entries = Object.entries(selected.platforms)
+        .filter(([, value]) => value.total > 0)
+        .sort((a, b) => b[1].total - a[1].total);
+      for (const [host, value] of entries) {
+        const row = doc.createElement("div");
+        row.className = "platform-row";
+        const name = doc.createElement("span");
+        name.textContent = S.PLATFORMS[host];
+        const track = doc.createElement("div");
+        track.className = "platform-track";
+        track.setAttribute("aria-hidden", "true");
+        const fill = doc.createElement("div");
+        fill.className = "platform-fill";
+        fill.style.width = `${(value.total / Math.max(1, selected.total)) * 100}%`;
+        track.append(fill);
+        const number = doc.createElement("span");
+        number.className = "platform-value";
+        number.textContent = new Intl.NumberFormat(undefined, {
+          style: "percent",
+          maximumFractionDigits: 0,
+        }).format(value.total / Math.max(1, selected.total));
+        number.title = `${integer(value.total)} estimated tokens`;
+        row.append(name, track, number);
+        container.append(row);
+      }
+      if (!entries.length) {
+        const empty = doc.createElement("p");
+        empty.className = "small";
+        empty.textContent = "No platform activity in this period.";
+        container.append(empty);
+      }
+      const assigned = entries.reduce((sum, [, value]) => sum + value.total, 0);
+      byId("legacy-note").hidden = assigned >= selected.total;
+    }
+    function renderChart() {
+      const chart = byId("daily-chart");
+      // Keep keyboard focus and the chosen day intact during live storage updates.
+      const focusedDate = doc.activeElement?.dataset.date;
+      const selectedDate = chart.querySelector('[aria-pressed="true"]')?.dataset
+        .date;
+      chart.replaceChildren();
+      const days = S.recentDays();
+      const max = Math.max(
+        1,
+        ...days.map((key) => state.dailyHistory[key]?.total || 0),
+      );
+      for (const key of days) {
+        const tokens = state.dailyHistory[key]?.total || 0;
+        const date = new Date(`${key}T12:00:00`);
+        const amount = quantity(S.estimate(tokens).wh, "Wh", "kWh");
+        const label = `${date.toLocaleDateString(undefined, { month: "short", day: "numeric" })}: ${amount.value} ${amount.unit}, ${integer(tokens)} estimated tokens`;
+        const button = doc.createElement("button");
+        button.className = "day";
+        button.type = "button";
+        button.dataset.date = key;
+        button.setAttribute("aria-label", label);
+        button.setAttribute("aria-pressed", String(key === selectedDate));
+        button.title = label;
+        const track = doc.createElement("span");
+        track.className = "day-track";
+        track.setAttribute("aria-hidden", "true");
+        const bar = doc.createElement("span");
+        bar.className = "day-bar";
+        bar.style.height = `${Math.max(2, (tokens / max) * 64)}px`;
+        track.append(bar);
+        const caption = doc.createElement("span");
+        caption.textContent =
+          key === S.dateKey()
+            ? "Today"
+            : date.toLocaleDateString(undefined, { weekday: "short" });
+        button.append(track, caption);
+        button.addEventListener("click", () => {
+          chart
+            .querySelectorAll("button")
+            .forEach((item) =>
+              item.setAttribute("aria-pressed", String(item === button)),
+            );
+          text("chart-readout", label);
         });
-}
-
-// ── Daily Chart ──────────────────────────────────────────────────────────────
-
-function renderDailyChart(dailyHistory) {
-    var chartEl = document.getElementById('daily-chart');
-    var labelsEl = document.getElementById('chart-labels');
-    if (!chartEl || !labelsEl) return;
-
-    var days = getLast7Days();
-    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    var data = days.map(function (dateStr) {
-        var entry = dailyHistory[dateStr] || { prompt: 0, response: 0, total: 0 };
-        return { date: dateStr, prompt: entry.prompt, response: entry.response, total: entry.total };
-    });
-
-    var maxTotal = Math.max(1, Math.max.apply(null, data.map(function (d) { return d.total; })));
-
-    chartEl.innerHTML = '';
-    labelsEl.innerHTML = '';
-
-    data.forEach(function (d) {
-        var col = document.createElement('div');
-        col.className = 'chart-col';
-
-        var pHeight = Math.max(0, (d.prompt / maxTotal) * 36);
-        var rHeight = Math.max(0, (d.response / maxTotal) * 36);
-
-        var pBar = document.createElement('div');
-        pBar.className = 'chart-bar prompt';
-        pBar.style.height = pHeight + 'px';
-        pBar.title = 'Input: ' + formatCompact(d.prompt);
-
-        var rBar = document.createElement('div');
-        rBar.className = 'chart-bar response';
-        rBar.style.height = rHeight + 'px';
-        rBar.title = 'Output: ' + formatCompact(d.response);
-
-        col.appendChild(pBar);
-        col.appendChild(rBar);
-        chartEl.appendChild(col);
-
-        var label = document.createElement('div');
-        label.className = 'chart-label';
-        var dateObj = new Date(d.date + 'T12:00:00');
-        label.textContent = dayNames[dateObj.getDay()];
-        labelsEl.appendChild(label);
-    });
-}
-
-function getLast7Days() {
-    var days = [];
-    for (var i = 6; i >= 0; i--) {
-        var d = new Date();
-        d.setDate(d.getDate() - i);
-        var key = d.getFullYear() + '-' +
-            String(d.getMonth() + 1).padStart(2, '0') + '-' +
-            String(d.getDate()).padStart(2, '0');
-        days.push(key);
+        chart.append(button);
+        if (key === selectedDate) text("chart-readout", label);
+      }
+      if (focusedDate)
+        chart.querySelector(`[data-date="${focusedDate}"]`)?.focus();
     }
-    return days;
-}
-
-// ── Utilities ────────────────────────────────────────────────────────────────
-
-function formatCompact(n) {
-    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
-    if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
-    return String(Math.floor(n));
-}
+    function render() {
+      const selected = selectUsage(state, period),
+        impact = S.estimate(selected.total);
+      metric(impact.wh, "energy-val", "energy-unit", "Wh", "kWh");
+      metric(impact.ml, "water-val", "water-unit", "mL", "L");
+      metric(impact.grams, "co2-val", "co2-unit", "g CO₂e", "kg CO₂e");
+      text(
+        "impact-label",
+        `Illustrative energy estimate · ${PERIODS[period].toLowerCase()}`,
+      );
+      text(
+        "equivalent",
+        selected.total
+          ? `Like a 9 W LED on for ${duration(impact.bulbSeconds)}.`
+          : "A small number. A useful perspective.",
+      );
+      text("input-count", integer(selected.prompt));
+      text("output-count", integer(selected.response));
+      text("token-count", integer(selected.total));
+      text(
+        "token-summary",
+        `${new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(selected.total)} tokens`,
+      );
+      text("platform-period", PERIODS[period]);
+      byId("empty-state").hidden = selected.total > 0;
+      text(
+        "empty-title",
+        state.paused
+          ? "Take a pause. Your totals will wait."
+          : state.totalTokens
+            ? "A fresh start for this period."
+            : "Your next prompt is a starting point.",
+      );
+      text(
+        "empty-copy",
+        state.paused
+          ? "Resume tracking when you’re ready. Activity while paused is excluded."
+          : "Open ChatGPT, Gemini, or Claude and send a message. New text exchanges appear here automatically.",
+      );
+      byId("pause-btn").textContent = state.paused ? "Resume" : "Pause";
+      byId("tracking-status").lastChild.textContent = state.paused
+        ? " Tracking paused"
+        : " Tracking new text exchanges";
+      doc.body.classList.toggle("paused", state.paused);
+      renderPlatforms(selected);
+      renderChart();
+    }
+    async function refresh() {
+      const current = ++revision;
+      try {
+        const next = await request({ type: "GET_STATE" });
+        if (current === revision) {
+          state = next;
+          render();
+        }
+      } catch (error) {
+        feedback(error.message);
+      }
+    }
+    doc.querySelectorAll("[data-period]").forEach((button) =>
+      button.addEventListener("click", () => {
+        period = button.dataset.period;
+        doc
+          .querySelectorAll("[data-period]")
+          .forEach((item) =>
+            item.setAttribute("aria-pressed", String(item === button)),
+          );
+        render();
+      }),
+    );
+    byId("pause-btn").addEventListener("click", async () => {
+      byId("pause-btn").disabled = true;
+      try {
+        state = await request({ type: "SET_PAUSED", paused: !state.paused });
+        render();
+        feedback(
+          state.paused
+            ? "Tracking paused across all tabs."
+            : "Tracking resumed. Send a new message to continue.",
+        );
+      } catch (error) {
+        feedback(error.message);
+      } finally {
+        byId("pause-btn").disabled = false;
+      }
+    });
+    byId("reset-btn").addEventListener("click", () => {
+      byId("reset-confirm").hidden = false;
+      byId("confirm-reset-btn").focus();
+    });
+    byId("cancel-reset-btn").addEventListener("click", () => {
+      byId("reset-confirm").hidden = true;
+      byId("reset-btn").focus();
+    });
+    byId("confirm-reset-btn").addEventListener("click", async () => {
+      byId("confirm-reset-btn").disabled = true;
+      try {
+        state = await request({ type: "RESET" });
+        render();
+        byId("reset-confirm").hidden = true;
+        text("chart-readout", "Select a day for its estimate.");
+        feedback(
+          "All usage data cleared. New exchanges will start a fresh record.",
+        );
+        byId("reset-btn").focus();
+      } catch (error) {
+        feedback(error.message);
+      } finally {
+        byId("confirm-reset-btn").disabled = false;
+      }
+    });
+    byId("export-btn").addEventListener("click", async () => {
+      try {
+        const latest = await request({ type: "GET_STATE" });
+        const blob = new Blob([JSON.stringify(exportData(latest), null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob),
+          anchor = doc.createElement("a");
+        anchor.href = url;
+        anchor.download = `ecoprompt-${S.dateKey()}.json`;
+        doc.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        feedback("Export downloaded, including the estimation assumptions.");
+      } catch (error) {
+        feedback(error.message);
+      }
+    });
+    api.storage.onChanged.addListener((changes, area) => {
+      if (area === "local") refresh();
+    });
+    text("version", `v${api.runtime.getManifest().version}`);
+    refresh();
+    return { refresh };
+  }
+  if (typeof module !== "undefined")
+    module.exports = { selectUsage, quantity, duration, exportData, init };
+  else
+    document.addEventListener("DOMContentLoaded", () => init(), { once: true });
+})();
